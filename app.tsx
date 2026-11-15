@@ -314,21 +314,6 @@ function ModelPickerPopup() {
   const current = selection ? findModel(models, selection) : undefined;
   const catalogsLoading = providers.some((p) => models[p.id] === undefined);
 
-  // First run: seed the favorites with whatever the composer has selected.
-  useEffect(() => {
-    if (favorites === null || favorites.length > 0) return;
-    if (!selection?.providerId || !selection.model) return;
-    void setFavorites([
-      {
-        providerId: selection.providerId,
-        model: selection.model,
-        reasoningLevel: selection.reasoningLevel,
-        serviceTier: selection.serviceTier,
-      },
-    ]).catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [favorites === null]);
-
   const providerById = (id: string): Provider | undefined =>
     providersState.providers.find((p) => p.id === id);
 
@@ -550,7 +535,6 @@ function ModelPickerPopup() {
         {editing && showHandle ? (
           <button
             type="button"
-            tabIndex={-1}
             aria-label={`Remove ${model?.displayName ?? row.model}`}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => toggleFavorite(row.providerId, row.model)}

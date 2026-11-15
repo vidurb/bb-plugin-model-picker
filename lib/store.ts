@@ -23,6 +23,9 @@ let rpc: Rpc | null = null;
 let sdk: Sdk | null = null;
 let favorites: Favorite[] | null = null;
 let favoritesRequest: Promise<Favorite[]> | null = null;
+let revision = 0;
+let writesPending = 0;
+let writeQueue: Promise<void> = Promise.resolve();
 const listeners = new Set<() => void>();
 
 function emit() {
@@ -41,12 +44,16 @@ export function getSdk(): Sdk | null {
 
 export function loadFavorites(force = false): Promise<Favorite[]> {
   if (rpc === null) return Promise.resolve(favorites ?? []);
+  if (writesPending > 0) return Promise.resolve(favorites ?? []);
   if (favoritesRequest !== null && !force) return favoritesRequest;
+  const startedAt = revision;
   const request = rpc.call("favorites_get").then(
     (result) => {
-      favorites = result.favorites;
-      emit();
-      return favorites;
+      if (startedAt === revision && writesPending === 0) {
+        favorites = result.favorites;
+        emit();
+      }
+      return favorites ?? [];
     },
     () => favorites ?? [],
   );
@@ -59,16 +66,24 @@ export function loadFavorites(force = false): Promise<Favorite[]> {
 
 export async function setFavorites(next: Favorite[]): Promise<void> {
   const previous = favorites;
+  const currentRevision = ++revision;
   favorites = next;
   emit();
   if (rpc === null) return;
+  writesPending++;
+  const client = rpc;
+  const save = writeQueue.then(() => client.call("favorites_set", { favorites: next }));
+  writeQueue = save.then(() => {}, () => {});
   try {
-    favorites = (await rpc.call("favorites_set", { favorites: next })).favorites;
+    const saved = (await save).favorites;
+    if (currentRevision === revision) favorites = saved;
   } catch (cause) {
-    favorites = previous;
+    if (currentRevision === revision) favorites = previous;
     throw cause;
   } finally {
+    writesPending--;
     emit();
+    if (writesPending === 0) void loadFavorites(true);
   }
 }
 
