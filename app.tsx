@@ -19,6 +19,7 @@ import {
   useComposer,
   useRealtime,
   useRpc,
+  useSettings,
   useSdk,
 } from "@get-bb/plugin-sdk/app";
 import type { ComposerSelection, PluginComposerApi } from "@get-bb/plugin-sdk/app";
@@ -26,6 +27,7 @@ import type { Favorite, rpcContract } from "./server";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { usePortalScopeProps } from "@/lib/portal-scope";
+import { shortModelName } from "@/lib/short-model-name";
 import {
   type CatalogModel,
   type Routing,
@@ -176,6 +178,7 @@ function ModelButton() {
 // row so React retains the composer context while shortcuts sit beside it.
 function FavoriteStrip() {
   useConnect();
+  const { values } = useSettings();
   const composer = useComposer();
   const favorites = useFavorites();
   const { providers } = useProviders();
@@ -183,7 +186,8 @@ function FavoriteStrip() {
   const models = useModels(routing, (favorites ?? []).map((f) => f.providerId));
   const anchor = useRef<HTMLSpanElement>(null);
   const [target, setTarget] = useState<HTMLElement | null>(null);
-  const selected = favorites?.some((f) => sameModel(f, composer.selection ?? {})) ?? false;
+  const showRow = values?.showFavoritesRow === true;
+  const hidePicker = values?.hideNativePicker === true;
 
   useEffect(() => {
     const row = anchor.current?.closest("[data-promptbox-action-row]");
@@ -200,16 +204,36 @@ function FavoriteStrip() {
   }, []);
 
   useEffect(() => {
+    if (target) target.style.display = showRow ? "flex" : "none";
+  }, [target, showRow]);
+
+  useEffect(() => {
     const picker = target?.nextElementSibling as HTMLElement | null;
-    if (!picker || !selected) return;
-    const previous = picker.style.opacity;
-    picker.style.opacity = ".55";
-    return () => { picker.style.opacity = previous; };
-  }, [target, selected]);
+    if (!picker || !hidePicker) return;
+    const previous = picker.style.display;
+    picker.style.display = "none";
+    return () => { picker.style.display = previous; };
+  }, [target, hidePicker]);
+
+  useEffect(() => {
+    const parent = target?.parentElement;
+    if (!target || !parent || !showRow) return;
+    const previous = parent.style.minWidth;
+    parent.style.minWidth = "0";
+    return () => { parent.style.minWidth = previous; };
+  }, [target, showRow]);
 
   return <>
     <span ref={anchor} hidden />
-    {target && createPortal((favorites ?? []).map((favorite) => {
+    {target && showRow && createPortal(<span className="model-picker-scroll" tabIndex={0} role="region" aria-label="Favorite models" onWheel={(event) => {
+      if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) event.currentTarget.scrollLeft += event.deltaY;
+    }} onKeyDown={(event) => {
+      if (event.target !== event.currentTarget) return;
+      if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+        event.preventDefault();
+        event.currentTarget.scrollBy({ left: event.key === "ArrowRight" ? 100 : -100, behavior: "smooth" });
+      }
+    }}>{(favorites ?? []).map((favorite) => {
       const provider = providers.find((p) => p.id === favorite.providerId);
       const name = findModel(models, favorite)?.displayName ?? favorite.model;
       const active = sameModel(favorite, composer.selection ?? {});
@@ -224,9 +248,9 @@ function FavoriteStrip() {
         onClick={() => void composer.setSelection(selectionFor(favorite)).catch((cause) => toast.error(errorMessage(cause)))}
       >
         <ProviderIcon providerKind="agent" provider={provider ?? { id: favorite.providerId }} className="size-4 shrink-0" aria-hidden />
-        <span>{name}</span>
+        <span>{shortModelName(name)}</span>
       </button>;
-    }), target)}
+    })}</span>, target)}
   </>;
 }
 

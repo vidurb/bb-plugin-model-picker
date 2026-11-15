@@ -8,12 +8,18 @@ thread and New Thread composer.
   (each remembers its own effort, drag to reorder), **Add models**, an
   **Effort** submenu, a **Fast** toggle, and **Edit** to remove favorites.
 - Favorites are stored on the bb server, so every window and device shares them.
-- Favorite shortcuts appear beside BB's native model picker. The row scrolls
-  horizontally when there is not enough room, and the current favorite is highlighted.
 
-This fork adds the shortcut row while retaining the original popup for managing
-favorites. It uses BB's composer action-row markers and the native picker's
-accessible label to place the row; a future BB layout change may require an update.
+## Optional composer layout
+
+In Settings → Plugins → Model Picker, enable **Show favorite model shortcuts**
+to add a horizontally scrolling row, and **Hide BB's model picker** to hide
+BB's native picker. Both default to off. The plugin's own button remains
+available for managing favorites and changing effort. Short labels show the
+full provider and model name on hover and to screen readers. Scroll the row
+with a trackpad, mouse wheel, or by focusing it and using the arrow keys.
+
+The row and native picker visibility use BB's composer action-row markers and
+the native picker's accessible label; a future BB layout change may require an update.
 
 ## Keyboard shortcuts
 

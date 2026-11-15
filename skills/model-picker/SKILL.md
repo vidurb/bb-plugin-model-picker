@@ -11,6 +11,11 @@ submenu and a Fast toggle.
 
 Favorites are stored on the bb server and shared by every window.
 
+Settings → Plugins → Model Picker offers two independent, off-by-default
+toggles: Show favorite model shortcuts adds a scrollable row in the composer;
+Hide BB's model picker hides the native picker in expanded composers. The
+plugin's own picker button remains available to manage favorites.
+
 ## CLI
 
 - `bb model-picker list [--json]`: list favorites in shortcut order.

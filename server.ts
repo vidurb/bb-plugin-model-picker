@@ -43,6 +43,16 @@ function dedupe(favorites: Favorite[]): Favorite[] {
 }
 
 export default async function plugin(bb: BbPluginApi) {
+  bb.settings.define({
+    showFavoritesRow: {
+      type: "boolean", label: "Show favorite model shortcuts",
+      description: "Show a horizontally scrollable row of favorites in the composer.", default: false,
+    },
+    hideNativePicker: {
+      type: "boolean", label: "Hide BB's model picker",
+      description: "Hide the native picker in expanded composers. The Model Picker button remains available.", default: false,
+    },
+  });
   async function read(): Promise<Favorite[]> {
     const parsed = favoritesSchema.safeParse(await bb.storage.kv.get(KEY));
     return parsed.success ? parsed.data : [];
