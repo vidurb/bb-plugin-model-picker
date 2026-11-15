@@ -1,0 +1,27 @@
+.model-picker-favorites {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.model-picker-favorites::-webkit-scrollbar { display: none; }
+.model-picker-favorite {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  max-width: 150px;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-variant: all-small-caps;
+  letter-spacing: .04em;
+}
+.model-picker-favorite span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.model-picker-favorite:hover { background: var(--state-hover); }
+.model-picker-favorite[aria-pressed="true"] { background: var(--state-active); color: var(--foreground); }

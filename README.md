@@ -8,6 +8,12 @@ thread and New Thread composer.
   (each remembers its own effort, drag to reorder), **Add models**, an
   **Effort** submenu, a **Fast** toggle, and **Edit** to remove favorites.
 - Favorites are stored on the bb server, so every window and device shares them.
+- Favorite shortcuts appear beside BB's native model picker. The row scrolls
+  horizontally when there is not enough room, and the current favorite is highlighted.
+
+This fork adds the shortcut row while retaining the original popup for managing
+favorites. It uses BB's composer action-row markers and the native picker's
+accessible label to place the row; a future BB layout change may require an update.
 
 ## Keyboard shortcuts
 

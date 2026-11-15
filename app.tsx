@@ -7,6 +7,8 @@
 //   Cmd+Shift+/    cycle reasoning effort
 //   Cmd+Ctrl+M     open the picker
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import "./favorites.css";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { toast } from "sonner";
@@ -168,6 +170,64 @@ function ModelButton() {
       {fast ? <Icon name="Zap" className="size-3.5 shrink-0" /> : null}
     </button>
   );
+}
+
+// Composer actions mount on the right. Attach a portal to the native picker's
+// row so React retains the composer context while shortcuts sit beside it.
+function FavoriteStrip() {
+  useConnect();
+  const composer = useComposer();
+  const favorites = useFavorites();
+  const { providers } = useProviders();
+  const routing = useRouting(composer);
+  const models = useModels(routing, (favorites ?? []).map((f) => f.providerId));
+  const anchor = useRef<HTMLSpanElement>(null);
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+  const selected = favorites?.some((f) => sameModel(f, composer.selection ?? {})) ?? false;
+
+  useEffect(() => {
+    const row = anchor.current?.closest("[data-promptbox-action-row]");
+    const picker = row?.querySelector<HTMLButtonElement>('button[aria-label^="Provider, model and reasoning"]');
+    if (!picker?.parentElement) return;
+    const container = document.createElement("span");
+    container.className = "model-picker-favorites";
+    container.dataset.bbPlugin = "model-picker";
+    picker.parentElement.insertBefore(container, picker);
+    setTarget(container);
+    return () => {
+      container.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    const picker = target?.nextElementSibling as HTMLElement | null;
+    if (!picker || !selected) return;
+    const previous = picker.style.opacity;
+    picker.style.opacity = ".55";
+    return () => { picker.style.opacity = previous; };
+  }, [target, selected]);
+
+  return <>
+    <span ref={anchor} hidden />
+    {target && createPortal((favorites ?? []).map((favorite) => {
+      const provider = providers.find((p) => p.id === favorite.providerId);
+      const name = findModel(models, favorite)?.displayName ?? favorite.model;
+      const active = sameModel(favorite, composer.selection ?? {});
+      return <button
+        key={`${favorite.providerId}/${favorite.model}`}
+        type="button"
+        className="model-picker-favorite"
+        aria-label={`${provider?.displayName ?? favorite.providerId}: ${name}`}
+        aria-pressed={active}
+        title={`${provider?.displayName ?? favorite.providerId}: ${name}`}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => void composer.setSelection(selectionFor(favorite)).catch((cause) => toast.error(errorMessage(cause)))}
+      >
+        <ProviderIcon providerKind="agent" provider={provider ?? { id: favorite.providerId }} className="size-4 shrink-0" aria-hidden />
+        <span>{name}</span>
+      </button>;
+    }), target)}
+  </>;
 }
 
 // ---------------------------------------------------------------------------
@@ -812,7 +872,7 @@ export default definePluginApp((app) => {
   app.composer.customize({
     id: "model-picker",
     scopes: ["thread", "new-thread"],
-    actions: [{ id: "model-button", component: ModelButton }],
+    actions: [{ id: "favorite-strip", component: FavoriteStrip }, { id: "model-button", component: ModelButton }],
     experimental_popups: [
       { id: POPUP_ID, label: "Model picker", component: ModelPickerPopup },
     ],
