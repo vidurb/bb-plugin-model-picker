@@ -267,7 +267,7 @@ function FavoriteStrip() {
         onClick={() => void composer.setSelection(selectionFor(favorite)).catch((cause) => toast.error(errorMessage(cause)))}
       >
         <ProviderIcon providerKind="agent" provider={provider ?? { id: favorite.providerId }} className="size-4 shrink-0" aria-hidden />
-        <span>{shortModelName(name)}</span>
+        <span>{shortModelName(favorite.providerId, favorite.model, name)}</span>
       </button>;
     })}</span>, target)}
   </>;

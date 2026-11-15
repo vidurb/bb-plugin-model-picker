@@ -21,6 +21,15 @@ with a trackpad, mouse wheel, or by focusing it and using the arrow keys.
 The row and native picker visibility use BB's composer action-row markers and
 the native picker's accessible label; a future BB layout change may require an update.
 
+### Contributing short labels
+
+Add a provider ID and catalog model ID to `lib/model-labels.ts`. Use a distinct
+four-character label for each model within a provider; the full name remains
+available on hover and to screen readers. Find IDs with `bb provider list` and
+`bb provider models <providerId> --machine <machine>`. Models without a mapping
+use the existing automatic abbreviation. Run `node --test test/*.test.mjs` to
+check the labels and fallback.
+
 ## Keyboard shortcuts
 
 You can rebind these in bb's keyboard settings.
