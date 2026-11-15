@@ -196,9 +196,16 @@ function FavoriteStrip() {
     const container = document.createElement("span");
     container.className = "model-picker-favorites";
     container.dataset.bbPlugin = "model-picker";
-    picker.parentElement.insertBefore(container, picker);
+    const parent = picker.parentElement;
+    parent.insertBefore(container, picker);
+    const observer = new MutationObserver(() => {
+      const currentPicker = parent.querySelector('button[aria-label^="Provider, model and reasoning"]');
+      if (currentPicker && container.nextElementSibling !== currentPicker) parent.insertBefore(container, currentPicker);
+    });
+    observer.observe(parent, { childList: true });
     setTarget(container);
     return () => {
+      observer.disconnect();
       container.remove();
     };
   }, []);
@@ -208,11 +215,23 @@ function FavoriteStrip() {
   }, [target, showRow]);
 
   useEffect(() => {
-    const picker = target?.nextElementSibling as HTMLElement | null;
-    if (!picker || !hidePicker) return;
-    const previous = picker.style.display;
-    picker.style.display = "none";
-    return () => { picker.style.display = previous; };
+    const parent = target?.parentElement;
+    if (!parent || !hidePicker) return;
+    const hidden = new Map<HTMLElement, string>();
+    const hide = () => {
+      const picker = parent.querySelector<HTMLElement>('button[aria-label^="Provider, model and reasoning"]');
+      if (picker && !hidden.has(picker)) {
+        hidden.set(picker, picker.style.display);
+        picker.style.display = "none";
+      }
+    };
+    hide();
+    const observer = new MutationObserver(hide);
+    observer.observe(parent, { childList: true });
+    return () => {
+      observer.disconnect();
+      for (const [picker, previous] of hidden) picker.style.display = previous;
+    };
   }, [target, hidePicker]);
 
   useEffect(() => {
